@@ -1,0 +1,320 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: #0a0a0a;
+    font-family: 'Courier New', Courier, monospace;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    color: #00f3ff;
+}
+
+.form {
+    width: 400px;
+}
+
+/* --- CARD ESTILO CYBERPUNK --- */
+.card {
+    background-color: #121212;
+    padding: 40px;
+    border: 2px solid #ff003c;
+    box-shadow: 0 0 15px #ff003c, inset 0 0 5px #ff003c;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Detalhe de corte no canto superior */
+.card::before {
+    content: "";
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    border-style: solid;
+    border-width: 20px 20px 0 0;
+    border-color: #0a0a0a #121212 transparent transparent;
+}
+
+.card-top {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.imglogin {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #00f3ff;
+    box-shadow: 0px 0px 15px #00f3ff;
+    margin-bottom: 15px;
+}
+
+/* --- EFEITO GLITCH NO TÍTULO --- */
+.title {
+    position: relative;
+    color: #ff003c;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    text-shadow: 2px 2px #00f3ff;
+}
+
+.title::before, .title::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #121212;
+}
+
+.title::before {
+    left: 2px;
+    text-shadow: -2px 0 #ff003c;
+    clip: rect(44px, 450px, 56px, 0);
+    animation: glitch-anim 5s infinite linear alternate-reverse;
+}
+
+.title::after {
+    left: -2px;
+    text-shadow: -2px 0 #00f3ff;
+    clip: rect(44px, 450px, 56px, 0);
+    animation: glitch-anim2 5s infinite linear alternate-reverse;
+}
+
+@keyframes glitch-anim {
+    0% { clip: rect(31px, 9999px, 94px, 0); }
+    20% { clip: rect(62px, 9999px, 42px, 0); }
+    40% { clip: rect(16px, 9999px, 78px, 0); }
+    100% { clip: rect(54px, 9999px, 7px, 0); }
+}
+
+@keyframes glitch-anim2 {
+    0% { clip: rect(65px, 9999px, 100px, 0); }
+    20% { clip: rect(10px, 9999px, 58px, 0); }
+    60% { clip: rect(45px, 9999px, 69px, 0); }
+    100% { clip: rect(90px, 9999px, 22px, 0); }
+}
+
+/* --- FORMULÁRIO E INPUTS --- */
+.card-group {
+    margin-top: 20px;
+}
+
+.card-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: #ff003c;
+    font-weight: bold;
+}
+
+.card-group input[type="email"],
+.card-group input[type="password"] {
+    width: 100%;
+    background: #1a1a1a;
+    border: 1px solid #00f3ff;
+    padding: 12px;
+    color: #00f3ff;
+    outline: none;
+}
+
+.card-group input:focus {
+    box-shadow: 0 0 10px #00f3ff;
+}
+
+/* Container para alinhar o olho */
+.password-container {
+    position: relative;
+    width: 100%;
+}
+
+.eye-icon {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    z-index: 10;
+}
+
+.password-container input {
+    padding-right: 40px !important;
+}
+
+/* Botão com efeito de brilho */
+.card-group button {
+    width: 100%;
+    padding: 15px;
+    margin-top: 10px;
+    background: transparent;
+    border: 1px solid #ff003c;
+    color: #ff003c;
+    font-weight: bold;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: 0.3s;
+}
+
+.card-group button:hover {
+    background: #ff003c;
+    color: #000;
+    box-shadow: 0 0 20px #ff003c;
+}
+
+.checkbox-label {
+    display: flex !important;
+    align-items: center;
+    gap: 10px;
+    color: #00f3ff !important;
+    font-weight: normal !important;
+    cursor: pointer;
+}
+/* Wrapper do Loader */
+.loader-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #0a0a0a;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999; /* Fica acima de tudo */
+    flex-direction: column;
+}
+
+.loader-content {
+    text-align: center;
+    width: 300px;
+}
+
+/* Barra de progresso neon */
+.progress-bar {
+    width: 100%;
+    height: 10px;
+    background: #1a1a1a;
+    border: 1px solid #00f3ff;
+    margin-top: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    width: 0%;
+    background: #ff003c;
+    box-shadow: 0 0 15px #ff003c;
+    animation: fill-bar 2.5s forwards;
+}
+
+.loading-status {
+    font-size: 0.7rem;
+    color: #00f3ff;
+    margin-top: 10px;
+    letter-spacing: 2px;
+}
+
+/* Animação da barra preenchendo */
+@keyframes fill-bar {
+    0% { width: 0%; }
+    30% { width: 70%; }
+    80% { width: 90%; }
+    100% { width: 100%; }
+}
+.strength-container {
+    width: 100%;
+    height: 4px;
+    background: #1a1a1a;
+    margin-top: 5px;
+    border-radius: 2px;
+}
+
+.strength-fill {
+    height: 100%;
+    width: 0%;
+    transition: 0.5s;
+    box-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+}
+
+.terminal-section {
+    margin-top: 30px;
+    text-align: left;
+    border-top: 1px solid #00f3ff;
+    padding-top: 20px;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.input-group input {
+    flex: 1;
+    background: #000;
+    border: 1px solid #ff003c;
+    color: #fff;
+    padding: 10px;
+    outline: none;
+}
+
+.task-list {
+    list-style: none;
+    margin-top: 20px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.task-item {
+    background: rgba(255, 0, 60, 0.1);
+    border-left: 3px solid #ff003c;
+    margin-bottom: 10px;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    animation: slideIn 0.3s ease-out;
+}
+
+.task-item button {
+    background: transparent;
+    border: none;
+    color: #ff003c;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+.rank-item.top1 {
+    background: rgba(255, 189, 0, 0.2);
+    border: 1px solid #ffbd00;
+    box-shadow: 0 0 10px #ffbd00;
+    font-weight: bold;
+    color: #ffbd00 !important;
+    transform: scale(1.05);
+    margin-bottom: 5px;
+}
+.toast-msg {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 243, 255, 0.9);
+    color: #000;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-family: monospace;
+    font-weight: bold;
+    z-index: 1000;
+    animation: slideUp 0.3s ease-out;
+}
+@keyframes slideUp { from { bottom: -50px; } to { bottom: 20px; } }

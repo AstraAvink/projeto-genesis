@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Controle de Acesso - Gênesis Bio</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+</head>
+<body>
+
+    <form class="form">
+        <div class="card">
+            <div class="card-top">
+                <img class="imglogin" src="/img/ju (1).png" alt="Logo">
+                <h2 class="title" data-text="Acesso Gênesis">Acesso Gênesis</h2>
+                <p>Conectar ao Bio-Núcleo Online</p>
+            </div>
+
+            <div class="card-group">
+                <label for="usuario">Operador (Nome)</label>
+                <input type="text" id="usuario" placeholder="Digite seu nome de operador" required>
+            </div>
+
+            <div class="card-group">
+                <label for="senha">Senha</label>
+                <div class="password-container">
+                    <input type="password" id="senha" placeholder="Digite sua senha" required>
+                    <span id="togglePassword" class="eye-icon">👁️</span>
+                </div>
+            </div>
+
+            <div class="card-group btn">
+                <button type="submit">AUTENTICAR</button>
+            </div>
+
+            <div style="margin-top: 15px; text-align: center; font-size: 0.8rem;">
+                <a href="registro.html" style="color: #00f3ff; text-decoration: none;">> SOLICITAR NOVO ACESSO</a>
+            </div>
+        </div>
+    </form>
+
+    <script>
+        // --- 1. CONFIGURAÇÃO FIREBASE (IGUAL AO PAINEL) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAFMArguIaSRQA9ehmA0Lhfv-flSJk49OM",
+            authDomain: "projeto-genesis-bio.firebaseapp.com",
+            projectId: "projeto-genesis-bio",
+            databaseURL: "https://projeto-genesis-bio-default-rtdb.firebaseio.com/",
+            appId: "1:74727336496:web:a763418325c3ad94829bf5"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // --- 2. LÓGICA DO OLHINHO ---
+        const togglePassword = document.querySelector('#togglePassword');
+        const passwordField = document.querySelector('#senha');
+    
+        togglePassword.addEventListener('click', function () {
+            const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordField.setAttribute('type', type);
+            this.textContent = type === 'password' ? '👁️' : '🙈';
+        });
+
+        // --- 3. LÓGICA DE LOGIN ONLINE ---
+        document.querySelector('.form').addEventListener('submit', function(e) {
+            e.preventDefault(); 
+    
+            const nomeDigitado = document.querySelector('#usuario').value.trim();
+            const senhaDigitada = document.querySelector('#senha').value;
+
+            // BUSCA NO FIREBASE PELO NOME DO OPERADOR
+            db.ref('users/' + nomeDigitado).once('value', (snapshot) => {
+                const dados = snapshot.val();
+
+                if (dados && dados.senha === senhaDigitada) {
+                    // LOGIN SUCESSO
+                    // Guardamos no localStorage apenas para o navegador saber quem entrou
+                    localStorage.setItem('usuarioLogado', JSON.stringify({
+                        nome: nomeDigitado,
+                        email: nomeDigitado // Usando nome como ID único
+                    }));
+                    
+                    alert('ACESSO CONCEDIDO, OPERADOR ' + nomeDigitado.toUpperCase());
+                    window.location.href = "painel.html";
+                } else {
+                    // ERRO
+                    tocarSomErro();
+                    alert('ERRO: Credenciais inválidas ou operador inexistente!');
+                }
+            });
+        });
+
+        function tocarSomErro() {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.2);
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.start(); osc.stop(ctx.currentTime + 0.3);
+        }
+    </script>
+</body>
+</html>

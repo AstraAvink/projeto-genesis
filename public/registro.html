@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recrutamento - Gênesis Bio</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <style>
+        /* Estilos para o Olhinho e Barra que podem estar faltando no seu CSS */
+        .password-container { position: relative; width: 100%; }
+        .eye-icon {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #00f3ff;
+            font-size: 1.2rem;
+        }
+        #loading-bar-container {
+            width: 100%;
+            height: 4px;
+            background: #111;
+            margin-top: 10px;
+            display: none; /* Escondido por padrão */
+        }
+        #loading-bar-fill {
+            width: 0%;
+            height: 100%;
+            background: #00f3ff;
+            box-shadow: 0 0 10px #00f3ff;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <div class="card-top">
+            <h2 class="title" data-text="Novo Operador">Novo Operador</h2>
+            <p>Sincronizando com o Banco de Dados Global</p>
+        </div>
+
+        <div class="card-group">
+            <label for="regNome">Nome de Operador</label>
+            <input type="text" id="regNome" placeholder="Ex: CyberPaulo" required>
+        </div>
+
+        <div class="card-group">
+            <label for="regSenha">Senha de Acesso</label>
+            <div class="password-container">
+                <input type="password" id="regSenha" placeholder="Senha do Sistema" required>
+                <span id="togglePassword" class="eye-icon">👁️</span>
+            </div>
+        </div>
+
+        <div id="loading-bar-container">
+            <div id="loading-bar-fill"></div>
+        </div>
+
+        <div class="card-group btn" style="margin-top: 20px;">
+            <button id="btnRegistrar" onclick="registrarOnline()">CRIAR IDENTIDADE</button>
+        </div>
+
+        <div style="margin-top: 15px; text-align: center; font-size: 0.8rem;">
+            <a href="index.html" style="color: #00f3ff; text-decoration: none;"> < VOLTAR PARA LOGIN</a>
+        </div>
+    </div>
+
+    <script>
+        // 1. CONFIGURAÇÃO (Certifique-se que o link do seu banco termina com /)
+        const firebaseConfig = {
+            apiKey: "AIzaSyAFMArguIaSRQA9ehmA0Lhfv-flSJk49OM",
+            authDomain: "projeto-genesis-bio.firebaseapp.com",
+            projectId: "projeto-genesis-bio",
+            databaseURL: "https://projeto-genesis-bio-default-rtdb.firebaseio.com/",
+            appId: "1:74727336496:web:a763418325c3ad94829bf5"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // 2. LÓGICA DO OLHINHO (VOLTOU!)
+        const togglePassword = document.querySelector('#togglePassword');
+        const passwordField = document.querySelector('#regSenha');
+    
+        togglePassword.addEventListener('click', function () {
+            const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordField.setAttribute('type', type);
+            this.textContent = type === 'password' ? '👁️' : '🙈';
+        });
+
+        // 3. FUNÇÃO DE REGISTRO
+        function registrarOnline() {
+            const nome = document.getElementById('regNome').value.trim();
+            const senha = document.getElementById('regSenha').value;
+            const btn = document.getElementById('btnRegistrar');
+            const barraContainer = document.getElementById('loading-bar-container');
+            const barraFill = document.getElementById('loading-bar-fill');
+
+            if(!nome || !senha) {
+                alert("Operador, preencha todos os campos!");
+                return;
+            }
+
+            // Iniciar animação de carregamento
+            btn.disabled = true;
+            btn.textContent = "PROCESSANDO...";
+            barraContainer.style.display = "block";
+            barraFill.style.width = "50%";
+
+            // Verificar se nome já existe
+            db.ref('users/' + nome).once('value', (snapshot) => {
+                if(snapshot.exists()) {
+                    alert("ERRO: Este nome já está registrado no Banco Gênesis!");
+                    btn.disabled = false;
+                    btn.textContent = "CRIAR IDENTIDADE";
+                    barraFill.style.width = "0%";
+                    barraContainer.style.display = "none";
+                } else {
+                    // Criar dados
+                    db.ref('users/' + nome).set({
+                        senha: senha,
+                        lvl: 1,
+                        exp: 0,
+                        medalhas: ["INICIANTE"],
+                        streak: 1,
+                        dataRegistro: new Date().toLocaleDateString()
+                    }).then(() => {
+                        barraFill.style.width = "100%";
+                        setTimeout(() => {
+                            alert("BEM-VINDO AO PROJETO GÊNESIS!");
+                            window.location.href = "index.html";
+                        }, 500);
+                    }).catch(error => {
+                        alert("Falha na conexão: " + error.message);
+                        btn.disabled = false;
+                    });
+                }
+            });
+        }
+    </script>
+</body>
+</html>

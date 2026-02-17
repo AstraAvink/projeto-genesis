@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bio-Status Core - Projeto Gênesis</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <style>
+        /* RESET E MOBILE */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; padding: 0; background: #000; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow-x: hidden; }
+
+        /* INTERFACE GERAL */
+        .card { width: 94%; max-width: 650px; margin: 15px auto; padding: 20px; border: 1px solid #222; background: #050505; }
+        .patente-tag { color: #ffbd00; font-size: 0.6rem; letter-spacing: 1px; display: block; margin-top: 2px; font-weight: bold; text-transform: uppercase; }
+
+        /* RANKING E STATS */
+        .rank-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #1a1a1a; font-size: 0.85rem; }
+        .rank-item.top1 { background: rgba(255, 189, 0, 0.1); border: 1px solid #ffbd00; color: #ffbd00; border-radius: 5px; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
+        .stat-box { border: 1px solid #333; padding: 12px; text-align: center; background: rgba(0,243,255,0.03); border-radius: 5px; }
+        .stat-label { font-size: 0.6rem; color: #00f3ff; display: block; margin-bottom: 5px; }
+        .stat-value { font-size: 1.1rem; font-family: monospace; font-weight: bold; }
+
+        /* GAME ENGINE */
+        #game-container { height: 250px; position: relative; background: #000; border: 1px solid #333; border-radius: 5px; margin-top: 10px; overflow: hidden; }
+        #target { 
+            width: 60px; height: 60px; background: #ff003c; position: absolute; cursor: pointer; display: none; 
+            align-items: center; justify-content: center; font-size: 0.7rem; color: #fff; font-weight: bold;
+            border-radius: 50%; box-shadow: 0 0 15px #ff003c; z-index: 10;
+        }
+
+        /* COMPONENTES */
+        .checkbox-label { display: flex; align-items: center; padding: 12px; background: rgba(255,255,255,0.02); margin-bottom: 8px; border-radius: 5px; border: 1px solid #111; font-size: 0.8rem; }
+        .checkbox-label input { width: 18px; height: 18px; margin-right: 12px; }
+        .btn-logout { margin-top: 20px; width: 100%; padding: 12px; background: none; border: 1px solid #444; color: #666; font-weight: bold; border-radius: 5px; }
+        .toast-msg { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #00f3ff; color: #000; padding: 10px 20px; border-radius: 20px; font-weight: bold; z-index: 1000; font-size: 0.8rem; }
+        
+        #loader { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center; }
+    </style>
+</head>
+<body>
+
+    <div id="loader"><h2>BIO-SINCRONIZANDO...</h2></div>
+
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; font-family: monospace; font-size: 0.75rem; color: #00f3ff; border-bottom: 1px solid #1a1a1a; padding-bottom: 15px;">
+            <div>
+                LVL: <span id="userLevel" style="color: #ffbd00;">1</span> | EXP: <span id="expAtual">0</span>
+                <span id="patenteDisplay" class="patente-tag">RECRUTA</span>
+            </div>
+            <div style="text-align: right;">OP: <span id="nomeDisplay">...</span></div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-box">
+                <span class="stat-label">TEMPO_CONECTADO</span>
+                <span class="stat-value" id="tempoOnline">00:00:00</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">SEQ_DIÁRIA</span>
+                <span class="stat-value" id="streakDias">1 🔥</span>
+            </div>
+        </div>
+
+        <div style="margin: 15px 0; border: 1px solid #00f3ff; background: rgba(0, 243, 255, 0.05); padding: 10px; border-radius: 5px;">
+            <h3 style="color: #00f3ff; font-size: 0.65rem; margin: 0 0 10px 0;">> TOP_OPERADORES</h3>
+            <div id="lista-ranking" style="max-height: 120px; overflow-y: auto;">...</div>
+        </div>
+
+        <div style="border: 1px solid #ff003c; padding: 15px; background: rgba(255, 0, 60, 0.05); border-radius: 5px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span style="color: #ff003c; font-size: 0.7rem; font-weight: bold;">[SISTEMA_DE_HACKING]</span>
+                <span id="timer" style="color: #ff003c; font-family: monospace; font-size: 1rem;">0.0s</span>
+            </div>
+            
+            <div id="game-container">
+                <div id="target" onclick="processarClique()">HACK</div>
+                <div id="menu-jogos" style="display: flex; flex-direction: column; gap: 10px; padding: 20px; justify-content: center; height: 100%;">
+                    <button onclick="checarEJogar('reflexo')" style="padding: 12px; background: #ff003c; color: #fff; border: none; font-weight: bold; cursor: pointer;">> PROTOCOLO: REFLEXO</button>
+                    <button onclick="checarEJogar('decrypt')" style="padding: 12px; background: #00f3ff; color: #000; border: none; font-weight: bold; cursor: pointer;">> PROTOCOLO: BRUTE-FORCE</button>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 20px; border: 1px solid #00ff41; background: rgba(0, 255, 65, 0.05); padding: 15px;">
+            <h3 style="color: #00ff41; font-size: 0.7rem; margin: 0 0 10px 0;">> MERCADO_NEGRO | <span id="saldoMoedas">0</span> BC</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <button onclick="comprarItem('escudo', 500)" style="font-size: 0.6rem; padding: 8px; background: #222; color: #00ff41; border: 1px solid #00ff41;">ESCUDO (500BC)</button>
+                <button onclick="comprarItem('termica', 400)" style="font-size: 0.6rem; padding: 8px; background: #222; color: #ff003c; border: 1px solid #ff003c;">TÉRMICA (400BC)</button>
+            </div>
+        </div>
+
+        <div style="margin-top: 20px;">
+            <p style="font-size: 0.7rem; color: #00f3ff;">MISSAO: Hackear 10x (Reflexo): <span id="progresso-missao">0/10</span></p>
+            <p style="font-size: 0.8rem; color: #00f3ff; margin-bottom: 5px;">BIO-BATTERY: <span id="percentualSaude">100%</span></p>
+            <div style="width: 100%; height: 8px; background: #111; border-radius: 4px; overflow: hidden; margin-bottom: 15px;">
+                <div id="healthFill" style="height: 100%; width: 100%; background: #00f3ff; transition: width 0.5s;"></div>
+            </div>
+            
+            <label class="checkbox-label"><input type="checkbox" onchange="recarregarParcial('water')"> 💧 HIDRATAÇÃO (+33%)</label>
+            <label class="checkbox-label"><input type="checkbox" onchange="recarregarParcial('sun')"> ☀️ EXPOSIÇÃO SOLAR (+33%)</label>
+        </div>
+
+        <button onclick="logout()" class="btn-logout">DESCONECTAR</button>
+    </div>
+
+<script>
+    // CONFIGURAÇÃO FIREBASE
+    const firebaseConfig = {
+        apiKey: "AIzaSyAFMArguIaSRQA9ehmA0Lhfv-flSJk49OM",
+        authDomain: "projeto-genesis-bio.firebaseapp.com",
+        projectId: "projeto-genesis-bio",
+        databaseURL: "https://projeto-genesis-bio-default-rtdb.firebaseio.com/",
+        appId: "1:74727336496:web:a763418325c3ad94829bf5"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // ESTADO DO USUÁRIO
+    let usuarioAtual = JSON.parse(localStorage.getItem('usuarioLogado'));
+    if(!usuarioAtual) window.location.href = "index.html";
+    document.getElementById('nomeDisplay').textContent = usuarioAtual.nome.toUpperCase();
+
+    let dadosOnline = { 
+        lvl: 1, exp: 0, streak: 1, moedas: 0, 
+        ultimoCheck: Date.now(), medalhas: [], 
+        inventario: { escudo: false, termica: false } 
+    };
+    
+    let segundosSessao = 0;
+    let cliquesSessao = 0;
+    let gameActive = false, score = 0, timeLeft = 0, jogoTipo = "";
+    let gameLoopTimeout;
+
+    // INICIALIZAÇÃO
+    function carregarDadosOnline() {
+        db.ref('users/' + usuarioAtual.nome).on('value', (snapshot) => {
+            const data = snapshot.val();
+            if(data) {
+                dadosOnline = { ...dadosOnline, ...data };
+                atualizarInterface();
+            }
+        });
+        carregarRanking();
+        setInterval(contadorTempo, 1000);
+        setInterval(calcularDrenagem, 5000);
+    }
+
+    function atualizarInterface() {
+        document.getElementById('userLevel').textContent = dadosOnline.lvl;
+        document.getElementById('expAtual').textContent = dadosOnline.exp;
+        document.getElementById('streakDias').textContent = (dadosOnline.streak || 1) + " 🔥";
+        document.getElementById('saldoMoedas').textContent = dadosOnline.moedas || 0;
+        document.getElementById('patenteDisplay').textContent = definirPatente(dadosOnline.lvl);
+        calcularDrenagem();
+    }
+
+    function definirPatente(lvl) {
+        if (lvl <= 5) return "Recruta Operador";
+        if (lvl <= 15) return "Agente de Campo";
+        return "Especialista Bio";
+    }
+
+    // LÓGICA DE TEMPO E SAÚDE
+    function contadorTempo() {
+        segundosSessao++;
+        let h = Math.floor(segundosSessao / 3600).toString().padStart(2, '0');
+        let m = Math.floor((segundosSessao % 3600) / 60).toString().padStart(2, '0');
+        let s = (segundosSessao % 60).toString().padStart(2, '0');
+        document.getElementById('tempoOnline').textContent = `${h}:${m}:${s}`;
+    }
+
+    function calcularDrenagem() {
+        const OITO_HORAS_MS = 8 * 60 * 60 * 1000;
+        const agora = Date.now();
+        const inicio = dadosOnline.ultimoCheck || agora;
+        const tempoPassado = agora - inicio;
+        let porcentagem = 100 - (tempoPassado / OITO_HORAS_MS * 100);
+        
+        porcentagem = Math.max(0, Math.min(100, porcentagem));
+        document.getElementById('healthFill').style.width = porcentagem + "%";
+        document.getElementById('percentualSaude').textContent = Math.round(porcentagem) + "%";
+    }
+
+    function recarregarParcial(id) {
+        const OITO_HORAS_MS = 8 * 60 * 60 * 1000;
+        dadosOnline.ultimoCheck = (dadosOnline.ultimoCheck || Date.now()) + (OITO_HORAS_MS * 0.33);
+        if(dadosOnline.ultimoCheck > Date.now()) dadosOnline.ultimoCheck = Date.now();
+        
+        dadosOnline.moedas += 50;
+        ganharEXP(20);
+        mostrarNotificacao("RECARGA BIOMÉTRICA: +50 BC");
+        salvarDadosOnline();
+    }
+
+    // SISTEMA DE JOGOS
+    function checarEJogar(tipo) {
+        const hoje = new Date().toLocaleDateString();
+        if(dadosOnline.ultimoJogo === hoje) { alert("SESSÃO DIÁRIA ESGOTADA!"); return; }
+        
+        jogoTipo = tipo;
+        document.getElementById('menu-jogos').style.display = 'none';
+        
+        if(tipo === 'reflexo') {
+            gameActive = true; score = 0; timeLeft = 20.0;
+            document.getElementById('target').style.display = 'flex';
+            iniciarTimer();
+            moverAlvo();
+        } else {
+            alert("Protocolo Brute-Force em manutenção. Use Reflexo!");
+            location.reload();
+        }
+    }
+
+    function iniciarTimer() {
+        const loop = setInterval(() => {
+            timeLeft -= 0.1;
+            document.getElementById('timer').textContent = Math.max(0, timeLeft).toFixed(1) + "s";
+            if(timeLeft <= 0 || !gameActive) { 
+                clearInterval(loop); 
+                if(gameActive) finalizarJogo(); 
+            }
+        }, 100);
+    }
+
+    function moverAlvo() {
+        if(!gameActive) return;
+        const t = document.getElementById('target');
+        t.style.left = Math.random() * 80 + 5 + "%";
+        t.style.top = Math.random() * 70 + 5 + "%";
+        gameLoopTimeout = setTimeout(moverAlvo, 800);
+    }
+
+    function processarClique() {
+        if(gameActive) {
+            score++;
+            cliquesSessao++;
+            ganharEXP(5);
+            document.getElementById('progresso-missao').textContent = `${cliquesSessao}/10`;
+            if(cliquesSessao === 10) {
+                dadosOnline.moedas += 100;
+                mostrarNotificacao("MISSÃO COMPLETA: +100 BC");
+            }
+            moverAlvo();
+        }
+    }
+
+    function finalizarJogo() {
+        gameActive = false;
+        clearTimeout(gameLoopTimeout);
+        dadosOnline.ultimoJogo = new Date().toLocaleDateString();
+        db.ref('users/' + usuarioAtual.nome).update(dadosOnline).then(() => {
+            alert("SINC_FINALIZADA. SCORE: " + score);
+            location.reload();
+        });
+    }
+
+    // UTILITÁRIOS
+    function ganharEXP(qtd) {
+        dadosOnline.exp += qtd;
+        let meta = dadosOnline.lvl * 100;
+        if(dadosOnline.exp >= meta) {
+            dadosOnline.exp -= meta;
+            dadosOnline.lvl++;
+            mostrarNotificacao("NÍVEL UP: " + dadosOnline.lvl);
+        }
+        salvarDadosOnline();
+    }
+
+    function comprarItem(item, preco) {
+        if(dadosOnline.moedas >= preco) {
+            dadosOnline.moedas -= preco;
+            dadosOnline.inventario[item] = true;
+            mostrarNotificacao("UPGRADE INSTALADO!");
+            salvarDadosOnline();
+        } else { alert("BC INSUFICIENTE!"); }
+    }
+
+    function mostrarNotificacao(msg) {
+        const t = document.createElement('div');
+        t.className = 'toast-msg';
+        t.textContent = msg;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 2500);
+    }
+
+    function carregarRanking() {
+        db.ref('users').orderByChild('lvl').limitToLast(5).on('value', (snap) => {
+            const lista = document.getElementById('lista-ranking');
+            lista.innerHTML = "";
+            snap.forEach(c => {
+                const u = c.val();
+                lista.innerHTML = `<div class="rank-item"><span>${c.key}</span><span>LVL ${u.lvl}</span></div>` + lista.innerHTML;
+            });
+        });
+    }
+
+    function salvarDadosOnline() { db.ref('users/' + usuarioAtual.nome).update(dadosOnline); }
+    function logout() { localStorage.removeItem('usuarioLogado'); window.location.href = "index.html"; }
+
+    window.onload = () => {
+        setTimeout(() => document.getElementById('loader').style.display = 'none', 800);
+        carregarDadosOnline();
+    };
+</script>
+</body>
+</html>
